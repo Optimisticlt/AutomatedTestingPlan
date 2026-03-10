@@ -1,0 +1,35 @@
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+  # 开发环境 Flyway 直接由应用执行（不用 init-container）
+  flyway:
+    enabled: true
+
+  # 开发环境 Vault 配置（dev 模式）
+  cloud:
+    vault:
+      enabled: true
+      host: localhost
+      port: 8200
+      scheme: http
+      authentication: token
+      token: wtp-dev-root-token
+      kv:
+        enabled: true
+        backend: secret
+        default-context: webtestpro
+        application-name: wtp-api-service
+
+# 开发环境日志：详细输出
+logging:
+  level:
+    com.webtestpro: DEBUG
+    org.springframework.web: INFO
+    com.baomidou.mybatisplus: DEBUG
+
+# Knife4j 在开发环境开启
+knife4j:
+  enable: true
+  production: false

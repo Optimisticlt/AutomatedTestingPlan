@@ -1,0 +1,29 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # API Service 指标
+  - job_name: 'wtp-api-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:8080']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+
+  # Execution Worker 指标
+  - job_name: 'wtp-execution-worker'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:8081']
+
+  # MySQL 指标（需额外安装 mysqld_exporter）
+  # - job_name: 'mysql'
+  #   static_configs:
+  #     - targets: ['mysqld-exporter:9104']
+
+  # Redis 指标（需额外安装 redis_exporter）
+  # - job_name: 'redis-cache'
+  #   static_configs:
+  #     - targets: ['redis-exporter:9121']

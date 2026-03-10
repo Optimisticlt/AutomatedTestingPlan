@@ -1,0 +1,178 @@
+spring:
+  application:
+    name: wtp-api-service
+
+  # ---- 数据源 ----
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/web_test_pro?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: ${DB_USER:wtp_user}
+    password: ${DB_PASSWORD:WtpUser@2024}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 30
+      idle-timeout: 600000
+      connection-timeout: 10000
+      max-lifetime: 1800000
+
+  # ---- Flyway 数据库迁移（生产环境改为 K8s init-container，此处 enabled=false）----
+  flyway:
+    enabled: true          # 开发环境开启；生产环境改 false，由 init-container 执行
+    locations: classpath:db/migration
+    baseline-on-migrate: false
+    validate-on-migrate: true
+    encoding: UTF-8
+
+  # ---- Redis - 主连接（DB0 缓存，access_token）----
+  data:
+    redis:
+      host: ${REDIS_CACHE_HOST:localhost}
+      port: ${REDIS_CACHE_PORT:6379}
+      password: ${REDIS_CACHE_PASSWORD:}
+      database: 0
+      lettuce:
+        pool:
+          max-active: 20
+          max-idle: 10
+          min-idle: 2
+          max-wait: 2000ms
+
+  # ---- WebSocket ----
+  websocket:
+    enabled: true
+
+  # ---- 优雅停机 ----
+  lifecycle:
+    timeout-per-shutdown-phase: 60s
+
+# ---- 自定义 Redis 实例（队列 + 锁，在 RedisConfig 中初始化）----
+redis:
+  queue:
+    host: ${REDIS_QUEUE_HOST:localhost}
+    port: ${REDIS_QUEUE_PORT:6380}
+    password: ${REDIS_QUEUE_PASSWORD:}
+    database: 0
+  lock:
+    host: ${REDIS_LOCK_HOST:localhost}
+    port: ${REDIS_LOCK_PORT:6381}
+    password: ${REDIS_LOCK_PASSWORD:}
+    database: 0
+
+# ---- Server ----
+server:
+  port: 8080
+  shutdown: graceful
+  servlet:
+    context-path: /
+
+# ---- MyBatis-Plus ----
+mybatis-plus:
+  mapper-locations: classpath*:mapper/**/*.xml
+  type-aliases-package: com.webtestpro.common.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+  global-config:
+    db-config:
+      logic-delete-field: isDeleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+      id-type: assign_id   # 雪花算法
+
+# ---- Sa-Token ----
+sa-token:
+  token-name: Authorization
+  timeout: 7200            # access_token 有效期 2h（秒）
+  activity-timeout: 7200   # 闲置超时 2h
+  is-concurrent: true      # 允许同一账号多端并发登录
+  max-login-count: 5       # 最多 5 个并发 token pair
+  is-share: false
+  token-style: uuid
+  is-log: false
+
+# ---- XXL-JOB 执行器 ----
+xxl:
+  job:
+    admin:
+      addresses: http://${XXL_JOB_HOST:localhost}:${XXL_JOB_PORT:8089}/xxl-job-admin
+    executor:
+      app-name: wtp-api-service
+      address:
+      ip:
+      port: 9999
+      log-path: logs/xxl-job/api-service
+      log-retention-days: 30
+    access-token: ${XXL_JOB_TOKEN:wtp-xxl-job-token-2024}
+
+# ---- MinIO ----
+minio:
+  endpoint: http://${MINIO_HOST:localhost}:${MINIO_PORT:9000}
+  access-key: ${MINIO_ACCESS_KEY:wtpadmin}
+  secret-key: ${MINIO_SECRET_KEY:WtpMinio@2024}
+  bucket:
+    screenshot: wtp-screenshots
+    report: wtp-reports
+    snapshot: wtp-snapshots
+    archive: wtp-archive
+
+# ---- Selenoid ----
+selenoid:
+  url: http://${SELENOID_HOST:localhost}:${SELENOID_PORT:4444}/wd/hub
+  max-sessions: ${SELENOID_MAX_SESSIONS:5}
+
+# ---- Resilience4j 熔断配置 ----
+resilience4j:
+  circuitbreaker:
+    instances:
+      selenoid:
+        failure-rate-threshold: 50
+        slow-call-duration-threshold: 30s
+        slow-call-rate-threshold: 80
+        permitted-number-of-calls-in-half-open-state: 3
+        sliding-window-type: count_based
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        wait-duration-in-open-state: 30s
+      minio:
+        failure-rate-threshold: 50
+        slow-call-duration-threshold: 10s
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        wait-duration-in-open-state: 60s
+      notification:
+        failure-rate-threshold: 80
+        slow-call-duration-threshold: 5s
+        sliding-window-size: 5
+        minimum-number-of-calls: 3
+        wait-duration-in-open-state: 600s
+
+# ---- Actuator + Prometheus ----
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+      probes:
+        enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+# ---- Knife4j API 文档 ----
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
+    swagger-model-name: 实体类列表
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+  packages-to-scan: com.webtestpro.api.controller
+  paths-to-match: /api/v1/**

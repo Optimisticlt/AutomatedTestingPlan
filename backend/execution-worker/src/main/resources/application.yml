@@ -1,0 +1,121 @@
+spring:
+  application:
+    name: wtp-execution-worker
+
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/web_test_pro?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: ${DB_USER:wtp_user}
+    password: ${DB_PASSWORD:WtpUser@2024}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 20
+      idle-timeout: 600000
+      connection-timeout: 10000
+
+  # Worker 不执行 Flyway（由 API Service 或 init-container 负责）
+  flyway:
+    enabled: false
+
+  data:
+    redis:
+      host: ${REDIS_CACHE_HOST:localhost}
+      port: ${REDIS_CACHE_PORT:6379}
+      password: ${REDIS_CACHE_PASSWORD:}
+      database: 0
+      lettuce:
+        pool:
+          max-active: 20
+          max-idle: 10
+
+  lifecycle:
+    timeout-per-shutdown-phase: 270s   # 优雅停机：留 30s 余量给 K8s 强杀窗口
+
+redis:
+  queue:
+    host: ${REDIS_QUEUE_HOST:localhost}
+    port: ${REDIS_QUEUE_PORT:6380}
+    password: ${REDIS_QUEUE_PASSWORD:}
+    database: 0
+  lock:
+    host: ${REDIS_LOCK_HOST:localhost}
+    port: ${REDIS_LOCK_PORT:6381}
+    password: ${REDIS_LOCK_PASSWORD:}
+    database: 0
+
+server:
+  port: 8081
+  shutdown: graceful
+
+mybatis-plus:
+  mapper-locations: classpath*:mapper/**/*.xml
+  type-aliases-package: com.webtestpro.common.entity
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      logic-delete-field: isDeleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+      id-type: assign_id
+
+xxl:
+  job:
+    admin:
+      addresses: http://${XXL_JOB_HOST:localhost}:${XXL_JOB_PORT:8089}/xxl-job-admin
+    executor:
+      app-name: wtp-execution-worker
+      address:
+      ip:
+      port: 9998
+      log-path: logs/xxl-job/execution-worker
+      log-retention-days: 30
+    access-token: ${XXL_JOB_TOKEN:wtp-xxl-job-token-2024}
+
+minio:
+  endpoint: http://${MINIO_HOST:localhost}:${MINIO_PORT:9000}
+  access-key: ${MINIO_ACCESS_KEY:wtpadmin}
+  secret-key: ${MINIO_SECRET_KEY:WtpMinio@2024}
+  bucket:
+    screenshot: wtp-screenshots
+    report: wtp-reports
+    snapshot: wtp-snapshots
+    archive: wtp-archive
+
+selenoid:
+  url: http://${SELENOID_HOST:localhost}:${SELENOID_PORT:4444}/wd/hub
+  max-sessions: ${SELENOID_MAX_SESSIONS:5}
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      selenoid:
+        failure-rate-threshold: 50
+        slow-call-duration-threshold: 30s
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        wait-duration-in-open-state: 30s
+      minio:
+        failure-rate-threshold: 50
+        slow-call-duration-threshold: 10s
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        wait-duration-in-open-state: 60s
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+# 日志级别
+logging:
+  level:
+    com.webtestpro: INFO

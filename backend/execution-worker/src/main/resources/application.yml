@@ -2,6 +2,20 @@ spring:
   application:
     name: wtp-execution-worker
 
+  # ---- Spring Cloud Vault（ADR M10：AES 密钥从 Vault 注入）----
+  config:
+    import: "optional:vault://"
+  cloud:
+    vault:
+      uri: http://${VAULT_HOST:localhost}:${VAULT_PORT:8200}
+      token: ${VAULT_TOKEN:wtp-dev-root-token}
+      fail-fast: false
+      kv:
+        enabled: true
+        backend: secret
+        default-context: webtestpro
+        profile-separator: '/'
+
   datasource:
     url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/web_test_pro?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
     username: ${DB_USER:wtp_user}
@@ -32,11 +46,19 @@ spring:
     timeout-per-shutdown-phase: 270s   # 优雅停机：留 30s 余量给 K8s 强杀窗口
 
 redis:
+  # DB0：缓存库（LRU eviction，access_token / 热数据）
+  cache:
+    host: ${REDIS_CACHE_HOST:localhost}
+    port: ${REDIS_CACHE_PORT:6379}
+    password: ${REDIS_CACHE_PASSWORD:}
+    database: 0
+  # DB1：执行队列（noeviction + AOF）
   queue:
     host: ${REDIS_QUEUE_HOST:localhost}
     port: ${REDIS_QUEUE_PORT:6380}
     password: ${REDIS_QUEUE_PASSWORD:}
     database: 0
+  # DB2：分布式锁 + Selenoid 信号量 + refresh_token（noeviction）
   lock:
     host: ${REDIS_LOCK_HOST:localhost}
     port: ${REDIS_LOCK_PORT:6381}
@@ -49,7 +71,7 @@ server:
 
 mybatis-plus:
   mapper-locations: classpath*:mapper/**/*.xml
-  type-aliases-package: com.webtestpro.common.entity
+  type-aliases-package: com.webtestpro.common.entity,com.webtestpro.worker.entity
   configuration:
     map-underscore-to-camel-case: true
   global-config:
@@ -101,6 +123,13 @@ resilience4j:
         sliding-window-size: 10
         minimum-number-of-calls: 5
         wait-duration-in-open-state: 60s
+      # LogFlusher 的 MySQL INSERT 路径（NM4 防护：熔断后停止 RPUSH，防 DB1 内存耗尽）
+      logFlusher:
+        failure-rate-threshold: 50
+        slow-call-duration-threshold: 5s
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        wait-duration-in-open-state: 30s
 
 management:
   endpoints:

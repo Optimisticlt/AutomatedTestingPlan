@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN" monitorInterval="30">
+
+  <Appenders>
+
+    <Console name="Console" target="SYSTEM_OUT">
+      <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId}] %logger{36} - %msg%n"/>
+    </Console>
+
+    <RollingFile name="RollingFile"
+                 fileName="logs/execution-worker.log"
+                 filePattern="logs/execution-worker-%d{yyyy-MM-dd}-%i.log.gz">
+      <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId}] %logger{36} - %msg%n"/>
+      <Policies>
+        <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+        <SizeBasedTriggeringPolicy size="100MB"/>
+      </Policies>
+      <DefaultRolloverStrategy max="30"/>
+    </RollingFile>
+
+  </Appenders>
+
+  <Loggers>
+
+    <Logger name="com.webtestpro" level="INFO" additivity="false">
+      <AppenderRef ref="Console"/>
+      <AppenderRef ref="RollingFile"/>
+    </Logger>
+
+    <Logger name="org.springframework" level="WARN" additivity="false">
+      <AppenderRef ref="Console"/>
+    </Logger>
+
+    <Logger name="com.baomidou" level="WARN" additivity="false">
+      <AppenderRef ref="Console"/>
+    </Logger>
+
+    <Root level="WARN">
+      <AppenderRef ref="Console"/>
+    </Root>
+
+  </Loggers>
+
+</Configuration>

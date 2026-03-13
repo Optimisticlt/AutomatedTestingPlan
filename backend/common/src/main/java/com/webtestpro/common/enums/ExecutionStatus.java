@@ -38,6 +38,25 @@ public enum ExecutionStatus {
     }
 
     /**
+     * 根据 code 字符串反查枚举常量。
+     *
+     * @param code 状态码字符串，如 "WAITING"
+     * @return 对应的 ExecutionStatus
+     * @throws IllegalArgumentException 如果 code 不匹配任何枚举常量
+     */
+    public static ExecutionStatus fromCode(String code) {
+        if (code == null) {
+            throw new IllegalArgumentException("ExecutionStatus code must not be null");
+        }
+        for (ExecutionStatus status : values()) {
+            if (status.code.equals(code)) {
+                return status;
+            }
+        }
+        throw new IllegalArgumentException("Unknown ExecutionStatus code: " + code);
+    }
+
+    /**
      * 校验状态转移是否合法
      * @param from 当前状态
      * @param to   目标状态

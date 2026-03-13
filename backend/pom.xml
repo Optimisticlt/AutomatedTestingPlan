@@ -219,9 +219,29 @@
         </dependency>
     </dependencies>
 
+    <!-- Jenkins Maven 仓库（groovy-sandbox 在此发布，不在 Maven Central）-->
+    <repositories>
+        <repository>
+            <id>jenkins-releases</id>
+            <name>Jenkins Maven Repository</name>
+            <url>https://repo.jenkins-ci.org/releases/</url>
+            <releases><enabled>true</enabled></releases>
+            <snapshots><enabled>false</enabled></snapshots>
+        </repository>
+    </repositories>
+
     <build>
         <pluginManagement>
             <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <configuration>
+                        <encoding>UTF-8</encoding>
+                        <source>17</source>
+                        <target>17</target>
+                    </configuration>
+                </plugin>
                 <plugin>
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-maven-plugin</artifactId>
@@ -236,5 +256,16 @@
                 </plugin>
             </plugins>
         </pluginManagement>
+
+        <!-- 强制 maven-compiler-plugin 使用 UTF-8 编码（Windows 平台默认 GBK 会导致中文注释编译失败）-->
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <encoding>UTF-8</encoding>
+                </configuration>
+            </plugin>
+        </plugins>
     </build>
 </project>

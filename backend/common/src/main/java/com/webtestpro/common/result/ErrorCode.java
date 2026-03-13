@@ -20,11 +20,18 @@ public enum ErrorCode {
     TOKEN_INVALID(20003, "Token 无效"),
     WEBHOOK_SIGN_FAIL(20004, "Webhook 签名验证失败"),
     NONCE_REPLAY(20005, "请求已被使用，禁止重放"),
+    /** Webhook 综合鉴权失败（时间窗口 / 签名 / Nonce 任一不通过）统一对外返回此码，避免泄露具体失败原因 */
+    WEBHOOK_AUTH_FAIL(20006, "Webhook 鉴权失败"),
 
     // ---- 业务通用 ----
     RESOURCE_NOT_FOUND(30001, "资源不存在"),
     RESOURCE_ALREADY_EXISTS(30002, "资源已存在"),
     OPERATION_NOT_ALLOWED(30003, "当前状态不允许此操作"),
+
+    // ---- 用户管理 ----
+    USER_NOT_FOUND(30004, "用户不存在"),
+    USER_DISABLED(30005, "账号已禁用"),
+    PASSWORD_WRONG(30006, "密码错误"),
 
     // ---- 用例管理 ----
     CASE_REVIEW_NOT_APPROVED(31001, "用例未通过评审，无法加入执行计划"),

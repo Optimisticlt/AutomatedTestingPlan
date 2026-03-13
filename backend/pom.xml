@@ -44,6 +44,7 @@
         <jsqlparser.version>4.7</jsqlparser.version>
         <skywalking-toolkit.version>9.2.0</skywalking-toolkit.version>
         <vault-config.version>4.1.1</vault-config.version>
+        <resilience4j.version>2.1.0</resilience4j.version>
     </properties>
 
     <dependencyManagement>
@@ -193,6 +194,13 @@
                 <groupId>org.springframework.cloud</groupId>
                 <artifactId>spring-cloud-starter-vault-config</artifactId>
                 <version>${vault-config.version}</version>
+            </dependency>
+
+            <!-- Resilience4j -->
+            <dependency>
+                <groupId>io.github.resilience4j</groupId>
+                <artifactId>resilience4j-spring-boot3</artifactId>
+                <version>${resilience4j.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

@@ -2,6 +2,20 @@ spring:
   application:
     name: wtp-api-service
 
+  # ---- Spring Cloud Vault（ADR M10：AES 密钥和 Webhook Secret 从 Vault 注入）----
+  config:
+    import: "optional:vault://"
+  cloud:
+    vault:
+      uri: http://${VAULT_HOST:localhost}:${VAULT_PORT:8200}
+      token: ${VAULT_TOKEN:wtp-dev-root-token}
+      fail-fast: false           # optional: 前缀已指定非强制，此处双保险
+      kv:
+        enabled: true
+        backend: secret
+        default-context: webtestpro   # 加载 secret/webtestpro → Spring 属性
+        profile-separator: '/'
+
   # ---- 数据源 ----
   datasource:
     url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/web_test_pro?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
